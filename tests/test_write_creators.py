@@ -627,3 +627,33 @@ class ThumbnailAndReviewLabelTest(unittest.TestCase):
                 patch.object(plugin, "set_representation_colorspace") as label:
             plugin._label_display(representation, context)
         self.assertEqual(label.call_args.kwargs["colorspace"], "Output - sRGB")
+
+
+class RenderLauncherTest(unittest.TestCase):
+    def test_package_launcher_from_rez_environment_else_running_app(self):
+        from ayon_batiq.api.launcher import render_launcher
+        with tempfile.TemporaryDirectory() as root:
+            launcher = Path(root) / "batiq"
+            launcher.write_text("#!/bin/sh\n"); launcher.chmod(0o755)
+            env = {"REZ_BATIQ_ROOT": root, "REZ_BATIQ_VERSION": "0.2.26"}
+            self.assertEqual(render_launcher("{rez_root}/batiq", "/app/batiq-app", env), str(launcher))
+            # Not launched through rez, missing launcher, or no template: the running app.
+            self.assertEqual(render_launcher("{rez_root}/batiq", "/app/batiq-app", {}), "/app/batiq-app")
+            self.assertEqual(render_launcher("{rez_root}/nope", "/app/batiq-app", env), "/app/batiq-app")
+            self.assertEqual(render_launcher("", "/app/batiq-app", env), "/app/batiq-app")
+            self.assertEqual(render_launcher("{bad}", "/app/batiq-app", env), "/app/batiq-app")
+            launcher.chmod(0o644)
+            self.assertEqual(render_launcher("{rez_root}/batiq", "/app/batiq-app", env), "/app/batiq-app")
+
+    def test_context_collector_uses_the_launcher(self):
+        from ayon_batiq.plugins.publish import collect_context as module
+        host = SimpleNamespace(get_batiq_project_info=lambda: {"executable": "/app/batiq-app", "hostVersion": "0.2.35"},
+                               get_current_workfile=lambda: "/w/shot.batiq")
+        context = SimpleNamespace(data={"project_settings": {"batiq": {"render": {"launcher_template": "{rez_root}/batiq"}}}})
+        with tempfile.TemporaryDirectory() as root:
+            launcher = Path(root) / "batiq"; launcher.write_text("#!/bin/sh\n"); launcher.chmod(0o755)
+            with patch.object(module, "registered_host", return_value=host), \
+                    patch.dict(os.environ, {"REZ_BATIQ_ROOT": root, "REZ_BATIQ_VERSION": "0.2.26"}):
+                module.CollectBatiqContext().process(context)
+        self.assertEqual(context.data["batiqExecutable"], str(launcher))
+        self.assertEqual(context.data["batiqAppExecutable"], "/app/batiq-app")

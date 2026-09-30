@@ -1,6 +1,8 @@
 import pyblish.api
 from ayon_core.pipeline import registered_host
 
+from ayon_batiq.api.launcher import render_launcher
+
 
 class CollectBatiqContext(pyblish.api.ContextPlugin):
     label = "Collect BATIQ Context"
@@ -19,5 +21,11 @@ class CollectBatiqContext(pyblish.api.ContextPlugin):
                 "fps": info.get("fps"), "resolutionWidth": info.get("resolutionWidth"),
                 "resolutionHeight": info.get("resolutionHeight"), "pixelAspect": info.get("pixelAspect"),
                 "hostVersion": info.get("hostVersion", context.data["hostVersion"]),
-                "batiqExecutable": info.get("executable"),
+                # The running app; renders use the studio package launcher instead.
+                "batiqAppExecutable": info.get("executable"),
             })
+            settings = (context.data.get("project_settings") or {}).get("batiq", {}).get("render", {})
+            context.data["batiqExecutable"] = render_launcher(
+                settings.get("launcher_template"), info.get("executable"),
+            )
+            self.log.debug(f"Headless renders use {context.data['batiqExecutable']}")

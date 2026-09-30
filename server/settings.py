@@ -44,6 +44,19 @@ class ImageIOSettings(BaseSettingsModel):
     )
 
 
+class RenderModel(BaseSettingsModel):
+    launcher_template: str = SettingsField(
+        "{rez_root}/batiq",
+        title="BATIQ launcher for renders",
+        description=(
+            "Headless renders run this launcher. {rez_root} and {version} are the rez"
+            " batiq package BATIQ was launched from. The package launcher unpacks BATIQ"
+            " on first use, so any machine (workstation or farm) can render. Empty, or"
+            " not launched through rez: use the running BATIQ's own executable."
+        ),
+    )
+
+
 class ColorspaceRuleModel(BaseSettingsModel):
     batiq_name: str = SettingsField(
         "ACEScg", title="BATIQ colorspace", enum_resolver=batiq_colorspaces_enum
@@ -216,6 +229,7 @@ class BatiqSettings(BaseSettingsModel):
     workfile: WorkfileModel = SettingsField(
         default_factory=WorkfileModel, title="Workfile"
     )
+    render: RenderModel = SettingsField(default_factory=RenderModel, title="Rendering")
     colorspace: ColorspaceModel = SettingsField(
         default_factory=ColorspaceModel, title="Colorspace"
     )
@@ -233,6 +247,7 @@ DEFAULT_VALUES: dict[str, Any] = {
         "file_rules": {"activate_host_rules": False, "rules": []},
     },
     "workfile": {"apply_context_on_launch": True},
+    "render": {"launcher_template": "{rez_root}/batiq"},
     "colorspace": {"rules": []},
     # Mirrors BCN's Nuke write creators; DWAA is not available in BATIQ, so ZIP.
     "create": {

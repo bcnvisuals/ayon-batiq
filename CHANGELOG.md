@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.11
+- Headless renders (publish render and review bake) run the studio rez package's
+  launcher (`batiq/render/launcher_template`, default `{rez_root}/batiq` from
+  `REZ_BATIQ_ROOT`) instead of the artist's own runtime path. The package
+  launcher unpacks BATIQ on first use, so the same render works on a machine that
+  never ran BATIQ (verified with an empty data dir) - the basis for farm renders.
+- Falls back to the running app when BATIQ was not launched through rez.
+- Found while testing: BATIQ's in-app updater moves a runtime past its rez
+  package version (runtime 0.2.26 now runs 0.2.35), and projects saved by 0.2.35
+  do not load in 0.2.26 (`missing field exposure`). Keep the rez package on the
+  release artists run.
+
 ## 0.1.10
 - Thumbnail: new *Extract BATIQ Thumbnail* makes the JPEG from the middle review
   frame (ACES 2.0 sRGB) as Core would: `thumbnailPath` for the AYON version and a
