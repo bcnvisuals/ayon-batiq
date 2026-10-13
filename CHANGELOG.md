@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- *Load USD into Set*: USD and Alembic products load into a BATIQ Set, as Nuke's
+  GeoReference loader does, and update to a new version in place. The bridge
+  gains `nodes.create_set`.
+
 ## 0.1.11
 - Headless renders (publish render and review bake) run the studio rez package's
   launcher (`batiq/render/launcher_template`, default `{rez_root}/batiq` from
@@ -11,6 +16,7 @@
   package version (runtime 0.2.26 now runs 0.2.35), and projects saved by 0.2.35
   do not load in 0.2.26 (`missing field exposure`). Keep the rez package on the
   release artists run.
+||||||| parent of 3ecd063 (Load USD into Set: USD and Alembic products load into a BATIQ Set, like Nuke's GeoReference)
 
 ## 0.1.10
 - Thumbnail: new *Extract BATIQ Thumbnail* makes the JPEG from the middle review
