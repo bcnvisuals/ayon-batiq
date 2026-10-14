@@ -1,9 +1,18 @@
 # Changelog
 
-## Unreleased
-- *Load USD into Set*: USD and Alembic products load into a BATIQ Set, as Nuke's
-  GeoReference loader does, and update to a new version in place. The bridge
-  gains `nodes.create_set`.
+## 0.1.12
+- *Load USD into Set*: USD (`.usd`, `.usda`, `.usdc`, `.usdz`) and Alembic
+  products of any type load into a BATIQ Set, as Nuke's GeoReference loader does,
+  and update to a new version in place. The bridge gains `nodes.create_set`.
+  Needs a BATIQ with the Set node (verified on 0.2.38).
+- A version update swaps the file this container loaded, wherever the artist
+  moved it in the Set's list, and keeps every other file and the prim edits. If
+  the artist removed it, the new version goes back in first.
+- The container records the loaded file, the version's frame range (with
+  handles), fps and number, as Nuke's Alembic loader does. A Set reads the file
+  at the project frame and has no offset or range parameters (checked with
+  headless renders of an animated USD), so nothing is retimed.
+- Both loaders hand BATIQ forward-slash paths, and share the frame range helper.
 
 ## 0.1.11
 - Headless renders (publish render and review bake) run the studio rez package's
