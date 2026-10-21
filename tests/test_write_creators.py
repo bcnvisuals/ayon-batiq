@@ -668,6 +668,12 @@ class RenderTargetTest(CustomRangeAndValidatorsTest):
         job_info = plugin.get_job_info(job_info=SimpleNamespace(Plugin=None, Frames="1001,1003"))
         self.assertEqual(job_info.Frames, "1001,1003")
 
+    def test_submission_runs_after_the_workfile_is_integrated(self):
+        import pyblish.api
+        from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline
+        self.assertGreater(SubmitBatiqDeadline.order, pyblish.api.IntegratorOrder)
+        self.assertLess(SubmitBatiqDeadline.order, pyblish.api.IntegratorOrder + 0.2)  # before Submit Publish Job
+
     def test_local_render_is_not_submitted(self):
         from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline
         instance = self.publish_instance(self.created())

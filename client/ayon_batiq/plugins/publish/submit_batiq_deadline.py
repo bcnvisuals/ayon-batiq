@@ -21,7 +21,9 @@ if AbstractSubmitDeadline is not None:
         hosts = ["batiq"]
         families = ["render", "prerender", "image"]
         targets = ["local"]
-        order = pyblish.api.IntegratorOrder
+        # After Integrate, as Nuke's: the farm renders the published workfile, which
+        # must exist by then.
+        order = pyblish.api.IntegratorOrder + 0.1
         settings_category = "batiq"
 
         # Overridden by batiq/publish/SubmitBatiqDeadline settings.
