@@ -2,6 +2,8 @@ import pyblish.api
 from pathlib import Path
 from ayon_core.pipeline import registered_host
 
+# BATIQ Write format -> file extension.
+EXTENSIONS = {"jpeg": "jpg"}
 # Write formats that are display-referred, so a farm review can use the frames as is.
 DISPLAY_FORMATS = {"png", "jpeg", "jpg"}
 
@@ -59,6 +61,11 @@ class CollectWrites(pyblish.api.InstancePlugin):
             "writeNodeId": write_id,
             "writeNodeName": node.get("name"),
             "writePath": write_path,
+            # As Nuke's Write collector: the Deadline add-on writes the farm publish
+            # job's metadata to outputDir.
+            "path": write_path,
+            "outputDir": str(Path(write_path).parent) if write_path else None,
+            "ext": EXTENSIONS.get(output_format, output_format),
             "currentFile": current_file,
             "frameStart": frame_start + handle_start,
             "frameEnd": frame_end - handle_end,

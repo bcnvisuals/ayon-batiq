@@ -628,6 +628,9 @@ class RenderTargetTest(CustomRangeAndValidatorsTest):
         self.assertTrue(data["farm"])
         self.assertIn("render.farm", data["families"])
         self.assertEqual(data["expectedFiles"], [f"/renders/renderCompMain.{f}.exr" for f in (1001, 1002, 1003)])
+        # Submit Publish Job writes the farm publish metadata to outputDir (KeyError without it).
+        self.assertEqual((data["outputDir"], data["path"], data["ext"]),
+                         ("/renders", "/renders/renderCompMain.####.exr", "exr"))
         # EXR has no ACES 2.0 bake on the farm, so no review from the raw frames.
         self.assertFalse(data["useSequenceForReview"])
         with patch("ayon_batiq.plugins.publish.extract_render.render") as render:
