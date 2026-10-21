@@ -600,7 +600,7 @@ class RenderTargetTest(CustomRangeAndValidatorsTest):
         ValidateBatiqRenderedFrames().process(instance)
         instance.context.data.update(imageioSettings=({}, None), project_settings={})
         with patch("ayon_batiq.plugins.publish.extract_render.render") as render, \
-                patch("ayon_batiq.plugins.publish.extract_render.get_colorspace_settings_from_publish_context",
+                patch("ayon_batiq.api.publish_colorspace.get_colorspace_settings_from_publish_context",
                       return_value=(None, None)):
             ExtractRender().process(instance)
         render.assert_not_called()
@@ -683,6 +683,19 @@ class RenderTargetTest(CustomRangeAndValidatorsTest):
         names = [plugin.__name__ for plugin in pyblish.plugin.plugins_from_module(submit_batiq_deadline)]
         self.assertIn("SubmitBatiqDeadline", names)
         self.assertNotIn("AbstractSubmitDeadline", names)
+
+    def test_farm_publish_gets_the_ocio_colorspace_name(self):
+        from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline
+        _created, instance = self.farm_instance()
+        instance.data["colorspace"] = "ACEScg"
+        instance.context.data.update(imageioSettings=({"path": "/config.ocio"}, None), project_settings={})
+        with patch("ayon_batiq.api.publish_colorspace.get_ocio_config_colorspaces",
+                   return_value={"colorspaces": {"ACES - ACEScg": {"aliases": []}}}), \
+                patch("ayon_deadline.abstract_submit_deadline.AbstractSubmitDeadline.process") as submit:
+            SubmitBatiqDeadline().process(instance)
+        submit.assert_called_once()
+        # Submit Publish Job passes this on to the farm publish's representations.
+        self.assertEqual(instance.data["colorspace"], "ACES - ACEScg")
 
     def test_local_render_is_not_submitted(self):
         from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline

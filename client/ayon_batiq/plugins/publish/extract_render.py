@@ -1,13 +1,9 @@
 from pathlib import Path
 import pyblish.api
-from ayon_core.pipeline.colorspace import (
-    get_colorspace_settings_from_publish_context,
-    get_ocio_config_colorspaces,
-)
 from ayon_core.pipeline.publish import ColormanagedPyblishPluginMixin, get_instance_staging_dir
 from ayon_batiq.api.frames import existing_frames
 from ayon_batiq.api.headless import HeadlessRenderError, render, rendered_files
-from ayon_batiq.colorspace import to_ocio
+from ayon_batiq.api.publish_colorspace import ocio_colorspace
 
 class ExtractRender(pyblish.api.InstancePlugin, ColormanagedPyblishPluginMixin):
     label = "Render BATIQ Write"
@@ -74,27 +70,10 @@ class ExtractRender(pyblish.api.InstancePlugin, ColormanagedPyblishPluginMixin):
             "frameStart": start,
             "frameEnd": end,
         }
-        ocio_name = self._ocio_colorspace(data.get("colorspace"), instance.context)
+        ocio_name = ocio_colorspace(data.get("colorspace"), instance.context, self.log)
         if ocio_name:
             self.set_representation_colorspace(representation, instance.context, colorspace=ocio_name)
         data["representations"] = [representation]
-
-    def _ocio_colorspace(self, batiq_name, context):
-        """The project's OCIO name for the Write colorspace, or None if it has none."""
-        if not batiq_name:
-            return None
-        config_data, _file_rules = get_colorspace_settings_from_publish_context(context.data)
-        if not config_data:
-            return None  # colour management is off for this project
-        colorspaces = get_ocio_config_colorspaces(config_data["path"])["colorspaces"]
-        rules = context.data["project_settings"].get("batiq", {}).get("colorspace", {}).get("rules")
-        ocio_name = to_ocio(batiq_name, colorspaces, rules)
-        if not ocio_name:
-            self.log.warning(
-                f"BATIQ colorspace {batiq_name!r} has no match in {config_data['path']}; add a rule"
-                " under batiq/colorspace. The render is published without colorspace data."
-            )
-        return ocio_name
 
     @staticmethod
     def _rendered_files(frame_files, expected, staging):

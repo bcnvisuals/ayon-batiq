@@ -174,7 +174,7 @@ class HostPluginsTest(unittest.TestCase):
         instance.context.data.update(imageioSettings=({"path": "/config.ocio"}, None), project_settings={})
         config = {"colorspaces": {"ACES - ACEScg": {"aliases": []}}}
         with patch("ayon_batiq.plugins.publish.extract_render.render", side_effect=render), \
-                patch("ayon_batiq.plugins.publish.extract_render.get_ocio_config_colorspaces", return_value=config), \
+                patch("ayon_batiq.api.publish_colorspace.get_ocio_config_colorspaces", return_value=config), \
                 patch.object(ExtractRender, "set_representation_colorspace") as set_colorspace:
             ExtractRender().process(instance)
         representation = instance.data["representations"][0]
@@ -194,7 +194,7 @@ class HostPluginsTest(unittest.TestCase):
             instance = self._render_instance(staging, 1001, 1001, colorspace="ACEScg")
             instance.context.data.update(imageioSettings=imageio, project_settings={})
             with patch("ayon_batiq.plugins.publish.extract_render.render", side_effect=self._fake_render(staging, [1001])), \
-                    patch("ayon_batiq.plugins.publish.extract_render.get_ocio_config_colorspaces", return_value=config), \
+                    patch("ayon_batiq.api.publish_colorspace.get_ocio_config_colorspaces", return_value=config), \
                     patch.object(ExtractRender, "set_representation_colorspace") as set_colorspace:
                 ExtractRender().process(instance)
             set_colorspace.assert_not_called()

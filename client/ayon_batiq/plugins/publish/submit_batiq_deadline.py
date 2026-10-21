@@ -9,6 +9,8 @@ named in ``batiq/publish/SubmitBatiqDeadline`` (default ``BATIQ``), which takes
 """
 import pyblish.api
 
+from ayon_batiq.api.publish_colorspace import ocio_colorspace
+
 # Import the module, not the class: pyblish collects every plugin class in this
 # module's namespace and would try to run the abstract base too.
 try:
@@ -35,6 +37,10 @@ if abstract_submit_deadline is not None:
             if not instance.data.get("farm"):
                 self.log.debug("Not a farm render, skipping Deadline submission.")
                 return
+            # Submit Publish Job hands this to the farm publish as the frames'
+            # colorspace; a local render maps it in Extract Render instead.
+            instance.data["colorspace"] = ocio_colorspace(
+                instance.data.get("colorspace"), instance.context, self.log)
             super().process(instance)
 
         def get_job_info(self, job_info=None, **kwargs):
