@@ -9,14 +9,16 @@ named in ``batiq/publish/SubmitBatiqDeadline`` (default ``BATIQ``), which takes
 """
 import pyblish.api
 
+# Import the module, not the class: pyblish collects every plugin class in this
+# module's namespace and would try to run the abstract base too.
 try:
-    from ayon_deadline.abstract_submit_deadline import AbstractSubmitDeadline
+    from ayon_deadline import abstract_submit_deadline
 except ImportError:  # no Deadline add-on: Validate Farm Rendering reports it
-    AbstractSubmitDeadline = None
+    abstract_submit_deadline = None
 
-if AbstractSubmitDeadline is not None:
+if abstract_submit_deadline is not None:
 
-    class SubmitBatiqDeadline(AbstractSubmitDeadline):
+    class SubmitBatiqDeadline(abstract_submit_deadline.AbstractSubmitDeadline):
         label = "Submit BATIQ to Deadline"
         hosts = ["batiq"]
         families = ["render", "prerender", "image"]

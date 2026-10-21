@@ -674,6 +674,16 @@ class RenderTargetTest(CustomRangeAndValidatorsTest):
         self.assertGreater(SubmitBatiqDeadline.order, pyblish.api.IntegratorOrder)
         self.assertLess(SubmitBatiqDeadline.order, pyblish.api.IntegratorOrder + 0.2)  # before Submit Publish Job
 
+    def test_pyblish_discovers_only_the_batiq_submitter(self):
+        import pyblish.api
+        import pyblish.plugin
+        from ayon_batiq.plugins.publish import submit_batiq_deadline
+        pyblish.api.register_host("batiq")
+        self.addCleanup(pyblish.api.deregister_host, "batiq")
+        names = [plugin.__name__ for plugin in pyblish.plugin.plugins_from_module(submit_batiq_deadline)]
+        self.assertIn("SubmitBatiqDeadline", names)
+        self.assertNotIn("AbstractSubmitDeadline", names)
+
     def test_local_render_is_not_submitted(self):
         from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline
         instance = self.publish_instance(self.created())
