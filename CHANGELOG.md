@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.13
+- *Farm rendering*: a third render target on Render, Prerender and Image. The
+  Write is rendered on Deadline and published by the Deadline add-on's publish
+  job, as Nuke's farm renders are. The Deadline add-on itself is unchanged: the
+  new *Submit BATIQ to Deadline* (in this add-on) subclasses its
+  `AbstractSubmitDeadline` and sends `ProjectFile` + `WriteNode` (the Write's id)
+  to the Deadline plugin named in `publish/SubmitBatiqDeadline` (default `BATIQ`).
+  It runs after Integrate, like Nuke's, so the published workfile exists, and
+  imports the Deadline module rather than the class so pyblish never collects the
+  abstract base (that froze the Publisher).
+- Farm publishes carry the OCIO colorspace name, mapped as local renders map it
+  (now shared in `api/publish_colorspace.py`).
+- *Validate Farm Rendering* reports a bundle without the Deadline add-on, with a
+  Repair to local rendering. Farm reviews are made from PNG/JPEG Writes only: an
+  EXR needs BATIQ's ACES 2.0 bake, which runs in local renders.
+
 ## 0.1.12
 - *Load USD into Set*: USD (`.usd`, `.usda`, `.usdc`, `.usdz`) and Alembic
   products of any type load into a BATIQ Set, as Nuke's GeoReference loader does,

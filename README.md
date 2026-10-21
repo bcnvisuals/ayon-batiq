@@ -1,6 +1,6 @@
 # AYON-BATIQ
 
-AYON-BATIQ 0.1.11 is the separately installed AYON host add-on for BATIQ. It is
+AYON-BATIQ 0.1.13 is the separately installed AYON host add-on for BATIQ. It is
 not bundled into BATIQ: without this add-on, BATIQ keeps its generic embedded
 `import batiq` API and starts with no AYON menus, Qt process, or AYON imports.
 
@@ -14,7 +14,7 @@ python create_package.py
 
 This uses AYON's standard package workflow and writes the server-installable
 archive under `package/`. In AYON Server, open **Studio Settings → Bundles →
-Install addon**, choose that archive, then enable BATIQ 0.1.11 in a bundle.
+Install addon**, choose that archive, then enable BATIQ 0.1.13 in a bundle.
 
 The add-on requires AYON Server `>=1.8.4,<2.0.0`, AYON Core
 `>=1.9.10-bcn.1` (including final `1.9.10` and newer), and
@@ -32,8 +32,29 @@ environment to BATIQ alone.
 - `colorspace/rules`: map BATIQ colorspaces to names in the project's OCIO
   config, overriding the built-in table (loading and publishing).
 - `publish/ValidateBatiqContextSettings`: enabled / optional / active.
+- `publish/SubmitBatiqDeadline`: farm rendering on or off, and the Deadline
+  plugin farm jobs run (`deadline_plugin`, default `BATIQ`).
 - `publish/ExtractReviewIntermediates`: review frames baked by BATIQ with its
   ACES 2.0 output transform (sRGB display, SDR 100 nits).
+
+## Farm rendering
+
+Render, Prerender and Image offer three render targets: *Local machine
+rendering*, *Farm rendering* and *Use existing frames*. With *Farm rendering*
+the Publisher sends the Write to Deadline and the Deadline add-on's publish
+job publishes the frames once the render finishes. The Deadline add-on needs
+no BATIQ code; it needs:
+
+- A Deadline plugin that renders a BATIQ project: it receives `ProjectFile`
+  (the published workfile, or the work file) and `WriteNode` (the Write's
+  id), and renders that Write to its own path with `batiq-headless`. Its name
+  is `publish/SubmitBatiqDeadline/deadline_plugin` (default `BATIQ`).
+- A `deadline/publish/CollectJobInfo` profile matching host `batiq` (pool,
+  group, chunk size). The 3D Set node needs a GPU worker with Vulkan.
+- For a review: `deadline/publish/ProcessSubmittedJobOnFarm/aov_filter` with
+  host `batiq` and pattern `.*`, and a core Extract Review profile for host
+  `batiq`. Only PNG/JPEG Writes are reviewed on the farm: they are already
+  display-referred. EXR farm renders publish without a review.
 
 ## Loading
 
@@ -70,7 +91,7 @@ PYTHONPATH=.:client:<ayon-core>/client:<dependencies> python -m pytest tests
 ## Development mode
 
 1. Run `python create_package.py` once and install the generated ZIP on AYON Server.
-2. Add and enable BATIQ 0.1.11 in a development bundle.
+2. Add and enable BATIQ 0.1.13 in a development bundle.
 3. Enable the add-on custom path and point its client path at `<path-to-ayon-batiq>/client`.
 4. Start AYON Launcher with that development bundle (or `--use-dev`).
 5. Launch the configured BATIQ application.
