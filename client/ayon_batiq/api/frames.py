@@ -30,3 +30,13 @@ def existing_frames(write_path: str, frames: Iterable[int]) -> tuple[list[Path],
         else:
             missing.append(frame)
     return files, missing
+
+
+def expected_files(write_path: str, frames: Iterable[int]) -> list[str]:
+    """The files a Write renders for ``frames``, in frame order (a still is one file)."""
+    files = []
+    for frame in frames:
+        path = str(frame_path(write_path, frame))
+        if path not in files:
+            files.append(path)
+    return files

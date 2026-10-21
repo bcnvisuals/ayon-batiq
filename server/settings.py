@@ -195,10 +195,27 @@ class ExtractReviewIntermediatesModel(BaseSettingsModel):
     )
 
 
+class SubmitBatiqDeadlineModel(BaseSettingsModel):
+    enabled: bool = SettingsField(True, title="Enabled")
+    deadline_plugin: str = SettingsField(
+        "BATIQ",
+        title="Deadline plugin",
+        description=(
+            "The Deadline plugin farm renders run. It takes ProjectFile and WriteNode (the"
+            " Write's id) and renders that Write to its own path."
+        ),
+    )
+
+
 class PublishPluginsModel(BaseSettingsModel):
     ExtractReviewIntermediates: ExtractReviewIntermediatesModel = SettingsField(
         default_factory=ExtractReviewIntermediatesModel,
         title="Extract Review Intermediates",
+    )
+    SubmitBatiqDeadline: SubmitBatiqDeadlineModel = SettingsField(
+        default_factory=SubmitBatiqDeadlineModel,
+        title="Submit BATIQ to Deadline",
+        description="Farm rendering. Pools, groups and chunk size come from deadline/publish/CollectJobInfo.",
     )
     ValidateBatiqContextSettings: OptionalPluginModel = SettingsField(
         default_factory=OptionalPluginModel,
@@ -292,6 +309,7 @@ DEFAULT_VALUES: dict[str, Any] = {
                 },
             ],
         },
+        "SubmitBatiqDeadline": {"enabled": True, "deadline_plugin": "BATIQ"},
         "ValidateBatiqContextSettings": {
             "enabled": True,
             "optional": True,

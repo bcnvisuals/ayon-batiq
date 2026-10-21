@@ -2,6 +2,9 @@ import pyblish.api
 from pathlib import Path
 from ayon_core.pipeline import registered_host
 
+# Write formats that are display-referred, so a farm review can use the frames as is.
+DISPLAY_FORMATS = {"png", "jpeg", "jpg"}
+
 
 class CollectWrites(pyblish.api.InstancePlugin):
     label = "Collect BATIQ Write"
@@ -76,15 +79,39 @@ class CollectWrites(pyblish.api.InstancePlugin):
             "colorspace": node.get("output_space"),
             "writeChannels": node.get("write_channels"),
             "customFrameRange": custom,
-            # local: render now; frames: publish what the Write already rendered.
+            # local: render now; farm: Deadline renders the Write to its path;
+            # frames: publish what the Write already rendered.
             "renderTarget": creator_attributes.get("render_target") or "local",
         })
+        if instance.data["renderTarget"] == "farm":
+            self._collect_farm(instance, write_path, output_format)
         # Like Nuke: the review family is set while collecting, so ftrack's
         # CollectFtrackFamily and core Extract Review/Burnin pick the instance up.
         if instance.data["review"]:
             families = instance.data.setdefault("families", [])
             if "review" not in families:
                 families.append("review")
+
+    @staticmethod
+    def _collect_farm(instance, write_path, output_format):
+        """Data the Deadline add-on's submit and publish-job plugins read, as Nuke sets it.
+
+        The farm renders the Write to its own path; the publish job then publishes
+        ``expectedFiles`` from there.
+        """
+        from ayon_batiq.api.frames import expected_files
+
+        data = instance.data
+        families = data.setdefault("families", [])
+        if f"{data['productType']}.farm" not in families:
+            families.append(f"{data['productType']}.farm")
+        data["farm"] = True
+        data["expectedFiles"] = expected_files(
+            write_path, range(data["frameStartHandle"], data["frameEndHandle"] + 1))
+        # Core's farm Extract Review encodes the frames as they are. PNG/JPEG Writes are
+        # display-referred (ACES 2.0) and make a correct review; EXR needs BATIQ's own
+        # review bake, which runs only in a local render, so it gets none on the farm.
+        data["useSequenceForReview"] = output_format in DISPLAY_FORMATS
 
     @staticmethod
     def _task_range(instance):

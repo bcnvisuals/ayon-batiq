@@ -31,7 +31,8 @@ EXTENSIONS = {"exr": "exr", "tif": "tif", "dpx": "dpx", "png": "png", "jpeg": "j
 # BATIQ's built-in names, used only when the project has no colour management.
 UNMANAGED_COLORSPACES = {"scene_linear": "ACEScg", "rendering": "ACEScg", "compositing_linear": "ACEScg"}
 # As Nuke's write creators word them.
-RENDER_TARGETS = {"local": "Local machine rendering", "frames": "Use existing frames"}
+RENDER_TARGETS = {"local": "Local machine rendering", "farm": "Farm rendering",
+                  "frames": "Use existing frames"}
 # Instance changes that move the Write's render path or frame range.
 CONTEXT_KEYS = ("productName", "folderPath", "task", "variant")
 
@@ -77,7 +78,8 @@ class BatiqWriteCreator(Creator):
     def _render_target_def():
         return EnumDef(
             "render_target", items=RENDER_TARGETS, default="local", label="Render target",
-            tooltip="Render the Write now, or publish the frames it already rendered to its path.",
+            tooltip=("Render the Write now, on the farm (Deadline), or publish the frames it"
+                     " already rendered to its path."),
         )
 
     def _default_range(self):

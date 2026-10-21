@@ -272,3 +272,38 @@ class ValidateBatiqRenderedFrames(pyblish.api.InstancePlugin):
             raise PublishValidationError("Repair needs the Publisher's create context.")
         created["creator_attributes"]["render_target"] = "local"
         instance.context.data["create_context"].save_changes()
+
+
+class ValidateBatiqFarmRendering(pyblish.api.InstancePlugin):
+    """*Farm rendering* needs the Deadline add-on in the bundle."""
+
+    label = "Validate Farm Rendering"
+    hosts = ["batiq"]
+    families = WRITE_FAMILIES
+    order = pyblish.api.ValidatorOrder
+    actions = [RepairAction]
+
+    def process(self, instance):
+        if instance.data.get("renderTarget") != "farm":
+            return
+        manager = instance.context.data.get("ayonAddonsManager")
+        addon = manager.get_enabled_addon("deadline") if manager is not None else None
+        if addon is None:
+            raise PublishValidationError(
+                "Farm rendering needs the Deadline add-on, which is not enabled in this bundle.",
+                title="Deadline is not available",
+                description=(
+                    "### Deadline is not available\n\n*Farm rendering* submits the Write to"
+                    " Deadline, but the Deadline add-on is not enabled in this AYON bundle.\n\n"
+                    "Ask an admin to add it, or use **Repair** to switch this instance to"
+                    " *Local machine rendering*."
+                ),
+            )
+
+    @classmethod
+    def repair(cls, instance):
+        _creator, created = _creator_and_instance(instance)
+        if created is None:
+            raise PublishValidationError("Repair needs the Publisher's create context.")
+        created["creator_attributes"]["render_target"] = "local"
+        instance.context.data["create_context"].save_changes()

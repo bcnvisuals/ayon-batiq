@@ -25,6 +25,9 @@ class ExtractRender(pyblish.api.InstancePlugin, ColormanagedPyblishPluginMixin):
         step = int(data.get("step", 1))
         if data.get("renderTarget") == "frames":
             return self._use_existing_frames(instance, start, end, step)
+        if data.get("renderTarget") == "farm":
+            self.log.info("Rendered on the farm: Submit BATIQ to Deadline sends the Write.")
+            return None
         # Core's CollectManagedStagingDir sets this once anatomy data exists.
         staging = Path(data.get("stagingDir") or get_instance_staging_dir(instance))
         staging.mkdir(parents=True, exist_ok=True)

@@ -610,6 +610,71 @@ class RenderTargetTest(CustomRangeAndValidatorsTest):
         ValidateBatiqRenderedFrames.repair(instance)
         self.assertEqual(created["creator_attributes"]["render_target"], "local")
 
+    def farm_instance(self, write_format="exr"):
+        created = self.created()
+        created["creator_attributes"]["render_target"] = "farm"
+        node = self.bridge._node(created.transient_data["write_node_id"])
+        node.update(path=f"/renders/renderCompMain.####.{write_format}", write_format=write_format,
+                    write_first=1001, write_last=1003)
+        return created, self.publish_instance(created)
+
+    def test_farm_target_is_offered_after_local(self):
+        self.assertEqual(list(write_creator.RENDER_TARGETS), ["local", "farm", "frames"])
+
+    def test_farm_render_is_collected_for_the_deadline_addon_and_not_rendered_locally(self):
+        from ayon_batiq.plugins.publish.extract_render import ExtractRender
+        _created, instance = self.farm_instance()
+        data = instance.data
+        self.assertTrue(data["farm"])
+        self.assertIn("render.farm", data["families"])
+        self.assertEqual(data["expectedFiles"], [f"/renders/renderCompMain.{f}.exr" for f in (1001, 1002, 1003)])
+        # EXR has no ACES 2.0 bake on the farm, so no review from the raw frames.
+        self.assertFalse(data["useSequenceForReview"])
+        with patch("ayon_batiq.plugins.publish.extract_render.render") as render:
+            ExtractRender().process(instance)
+        render.assert_not_called()
+        self.assertNotIn("representations", data)
+
+    def test_display_referred_farm_render_is_reviewed_from_its_frames(self):
+        _created, instance = self.farm_instance("png")
+        self.assertTrue(instance.data["useSequenceForReview"])
+
+    def test_farm_rendering_needs_the_deadline_addon(self):
+        from ayon_core.pipeline.publish import PublishValidationError
+        from ayon_batiq.plugins.publish.validate_write import ValidateBatiqFarmRendering
+        created, instance = self.farm_instance()
+        manager = Mock()
+        instance.context.data["ayonAddonsManager"] = manager
+        manager.get_enabled_addon.return_value = object()
+        ValidateBatiqFarmRendering().process(instance)
+        manager.get_enabled_addon.return_value = None
+        with self.assertRaisesRegex(PublishValidationError, "Deadline add-on"):
+            ValidateBatiqFarmRendering().process(instance)
+        ValidateBatiqFarmRendering.repair(instance)
+        self.assertEqual(created["creator_attributes"]["render_target"], "local")
+
+    def test_deadline_job_renders_the_write_by_id_over_its_range(self):
+        from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline
+        _created, instance = self.farm_instance()
+        plugin = SubmitBatiqDeadline()
+        plugin._instance, plugin.scene_path = instance, "/publish/DEMO_sh010_comp_v007.batiq"
+        job_info = plugin.get_job_info(job_info=SimpleNamespace(Plugin=None, Frames=""))
+        self.assertEqual((job_info.Plugin, job_info.Frames), ("BATIQ", "1001-1003"))
+        self.assertEqual(plugin.get_plugin_info(), {
+            "ProjectFile": "/publish/DEMO_sh010_comp_v007.batiq",
+            "WriteNode": str(instance.data["writeNodeId"]),
+        })
+        # A custom range from the Publisher stays as Deadline collected it.
+        job_info = plugin.get_job_info(job_info=SimpleNamespace(Plugin=None, Frames="1001,1003"))
+        self.assertEqual(job_info.Frames, "1001,1003")
+
+    def test_local_render_is_not_submitted(self):
+        from ayon_batiq.plugins.publish.submit_batiq_deadline import SubmitBatiqDeadline
+        instance = self.publish_instance(self.created())
+        with patch("ayon_deadline.abstract_submit_deadline.AbstractSubmitDeadline.process") as submit:
+            SubmitBatiqDeadline().process(instance)
+        submit.assert_not_called()
+
     def test_review_frames_are_baked_in_the_instance_staging_dir(self):
         text = (Path(__file__).parents[1] / "client/ayon_batiq/plugins/publish/extract_review_intermediates.py").read_text()
         self.assertIn('Path(data.get("stagingDir") or source["stagingDir"])', text)
